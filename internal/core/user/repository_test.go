@@ -22,6 +22,7 @@ type UserRepositoryTestSuite struct {
 	pgContainer *testhelpers.PostgresContainer
 	db          *pgxpool.Pool
 	repository  user.Repository
+	testUser    entity.User
 	ctx         context.Context
 }
 
@@ -49,46 +50,41 @@ func (suite *UserRepositoryTestSuite) TearDownSuite() {
 	}
 }
 
-func (suite *UserRepositoryTestSuite) TearDownTest() {
-	_, err := suite.db.Exec(suite.ctx, "TRUNCATE TABLE users RESTART IDENTITY CASCADE;")
+func (suite *UserRepositoryTestSuite) SetupTest() {
+	_, err := suite.db.Exec(suite.ctx, "DELETE FROM users;")
 	if err != nil {
-		log.Fatalf("error restoring postgres container to snapshot: %s", err)
+		log.Fatalf("error deleteing all users on postgres: %s", err)
+	}
+
+	suite.testUser = entity.User{
+		ProviderId: "providerId",
+		Email:      "email",
 	}
 }
 
 func (suite *UserRepositoryTestSuite) TestCreateUserViolateUniqueConstraint() {
 	t := suite.T()
 	// Setup
-	userId, err := suite.repository.CreateUser(suite.ctx, entity.User{
-		GoogleId: "fakeId",
-		Email:    "test@test.com",
-		Username: "test",
-	})
+	userId, err := suite.repository.CreateUser(suite.ctx, suite.testUser)
 	require.NoError(t, err)
-	require.Equal(t, uint(1), userId)
+	require.Greater(t, userId, uint(0))
 	testTable := map[string]entity.User{
-		"duplicated google id": {
-			GoogleId: "fakeId",
-			Email:    "otherTest@test.com",
-			Username: "otherTest",
+		"duplicated provider id": {
+			ProviderId: suite.testUser.ProviderId,
+			Email:      "otherEmail",
 		},
 		"duplicated email": {
-			GoogleId: "otherFakeId",
-			Email:    "test@test.com",
-			Username: "otherTest",
-		},
-		"duplicated username": {
-			GoogleId: "otherFakeId",
-			Email:    "otherTest@test.com",
-			Username: "test",
+			ProviderId: "otherProviderId",
+			Email:      suite.testUser.Email,
 		},
 	}
 	for testCase, input := range testTable {
 		t.Run(testCase, func(t *testing.T) {
 			// Action
-			_, err := suite.repository.CreateUser(suite.ctx, input)
+			userId, err := suite.repository.CreateUser(suite.ctx, input)
 			// Assert
 			assert.Error(t, err)
+			assert.EqualValues(t, 0, userId)
 		})
 	}
 }
@@ -96,66 +92,56 @@ func (suite *UserRepositoryTestSuite) TestCreateUserViolateUniqueConstraint() {
 func (suite *UserRepositoryTestSuite) TestCreateUserSuccessfully() {
 	t := suite.T()
 	// Action
-	userId, err := suite.repository.CreateUser(suite.ctx, entity.User{
-		GoogleId: "fakeId",
-		Email:    "test@test.com",
-		Username: "test",
-	})
+	userId, err := suite.repository.CreateUser(suite.ctx, suite.testUser)
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, uint(1), userId)
+	assert.Greater(t, userId, uint(0))
 }
 
 func (suite *UserRepositoryTestSuite) TestGetUserByIdNotFound() {
 	t := suite.T()
 	// Action
-	_, err := suite.repository.GetUserById(suite.ctx, 1)
+	userId, err := suite.repository.GetUserById(suite.ctx, 1)
 	// Assert
 	assert.ErrorIs(t, err, sql.ErrNoRows)
+	assert.Equal(t, entity.User{}, userId)
 }
 
 func (suite *UserRepositoryTestSuite) TestGetUserByIdSuccessfully() {
 	t := suite.T()
 	// Setup
-	userId, err := suite.repository.CreateUser(suite.ctx, entity.User{
-		GoogleId: "fakeId",
-		Email:    "test@test.com",
-		Username: "test",
-	})
+	userId, err := suite.repository.CreateUser(suite.ctx, suite.testUser)
+	suite.testUser.Id = userId
 	require.NoError(t, err)
-	require.Equal(t, uint(1), userId)
+	require.Greater(t, userId, uint(0))
 	// Action
-	user, err := suite.repository.GetUserById(suite.ctx, 1)
+	user, err := suite.repository.GetUserById(suite.ctx, userId)
 	// Assert
 	assert.NoError(t, err)
-	assert.NotNil(t, user)
-	assert.Equal(t, uint(1), user.Id)
+	assert.Equal(t, suite.testUser, user)
 }
 
-func (suite *UserRepositoryTestSuite) TestGetUserByGoogleIdNotFound() {
+func (suite *UserRepositoryTestSuite) TestGetUserByProviderIdNotFound() {
 	t := suite.T()
 	// Action
-	_, err := suite.repository.GetUserByGoogleId(suite.ctx, "fakeId")
+	user, err := suite.repository.GetUserByProviderId(suite.ctx, "fakeId")
 	// Assert
 	assert.ErrorIs(t, err, sql.ErrNoRows)
+	assert.Equal(t, entity.User{}, user)
 }
 
-func (suite *UserRepositoryTestSuite) TestGetUserByGoogleIdSuccessfully() {
+func (suite *UserRepositoryTestSuite) TestGetUserByProviderIdSuccessfully() {
 	t := suite.T()
 	// Setup
-	userId, err := suite.repository.CreateUser(suite.ctx, entity.User{
-		GoogleId: "fakeId",
-		Email:    "test@test.com",
-		Username: "test",
-	})
+	userId, err := suite.repository.CreateUser(suite.ctx, suite.testUser)
+	suite.testUser.Id = userId
 	require.NoError(t, err)
-	require.Equal(t, uint(1), userId)
+	require.Greater(t, userId, uint(0))
 	// Action
-	user, err := suite.repository.GetUserByGoogleId(suite.ctx, "fakeId")
+	user, err := suite.repository.GetUserByProviderId(suite.ctx, suite.testUser.ProviderId)
 	// Assert
 	assert.NoError(t, err)
-	assert.NotNil(t, user)
-	assert.Equal(t, "fakeId", user.GoogleId)
+	assert.Equal(t, suite.testUser, user)
 }
 
 func TestCustomerRepoTestSuite(t *testing.T) {
