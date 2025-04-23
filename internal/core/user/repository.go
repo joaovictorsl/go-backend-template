@@ -11,7 +11,7 @@ import (
 type Repository interface {
 	CreateUser(ctx context.Context, u entity.User) (id uint, err error)
 	GetUserById(ctx context.Context, id uint) (u entity.User, err error)
-	GetUserByGoogleId(ctx context.Context, googleId string) (u entity.User, err error)
+	GetUserByProviderId(ctx context.Context, googleId string) (u entity.User, err error)
 }
 
 func NewRepository(db *pgxpool.Pool) Repository {
@@ -21,12 +21,12 @@ func NewRepository(db *pgxpool.Pool) Repository {
 }
 
 var (
-	//go:embed sql/save_user.sql
+	//go:embed sql/create_user.sql
 	CreateUserSQL string
 	//go:embed sql/get_user_by_id.sql
 	GetUserByIdSQL string
-	//go:embed sql/get_user_by_google_id.sql
-	GetUserByGoogleIdSQL string
+	//go:embed sql/get_user_by_provider_id.sql
+	GetUserByProviderIdSQL string
 )
 
 type RepositoryImpl struct {
@@ -34,19 +34,19 @@ type RepositoryImpl struct {
 }
 
 func (r RepositoryImpl) CreateUser(ctx context.Context, u entity.User) (id uint, err error) {
-	row := r.Database.QueryRow(ctx, CreateUserSQL, u.GoogleId, u.Email, u.Username)
+	row := r.Database.QueryRow(ctx, CreateUserSQL, u.ProviderId, u.Email)
 	err = row.Scan(&id)
 	return id, err
 }
 
 func (r RepositoryImpl) GetUserById(ctx context.Context, id uint) (u entity.User, err error) {
 	row := r.Database.QueryRow(ctx, GetUserByIdSQL, id)
-	err = row.Scan(&u.Id, &u.GoogleId, &u.Email, &u.Username)
+	err = row.Scan(&u.Id, &u.ProviderId, &u.Email)
 	return u, err
 }
 
-func (r RepositoryImpl) GetUserByGoogleId(ctx context.Context, googleId string) (u entity.User, err error) {
-	row := r.Database.QueryRow(ctx, GetUserByGoogleIdSQL, googleId)
-	err = row.Scan(&u.Id, &u.GoogleId, &u.Email, &u.Username)
+func (r RepositoryImpl) GetUserByProviderId(ctx context.Context, googleId string) (u entity.User, err error) {
+	row := r.Database.QueryRow(ctx, GetUserByProviderIdSQL, googleId)
+	err = row.Scan(&u.Id, &u.ProviderId, &u.Email)
 	return u, err
 }

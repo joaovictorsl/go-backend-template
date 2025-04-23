@@ -1,1 +1,1 @@
-INSERT INTO users (google_id, email, username) VALUES ($1, $2, $3) RETURNING id;
+INSERT INTO users (provider_id, email) VALUES ($1, $2) RETURNING id;
