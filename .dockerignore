@@ -6,3 +6,4 @@ tmp
 .env
 .env.local
 docker-compose.yml
+Makefile
