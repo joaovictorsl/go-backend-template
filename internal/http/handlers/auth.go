@@ -57,13 +57,13 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	newAccessToken, err := h.jwtService.NewToken(claims.UserId, h.cfg.JWT_ISS, h.cfg.JWT_SECRET, h.cfg.ACCESS_TOKEN_EXP)
+	newAccessToken, err := h.jwtService.NewAccessToken(claims.UserId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create access token"})
 		return
 	}
 
-	newRefreshToken, err := h.jwtService.NewToken(claims.UserId, h.cfg.JWT_ISS, h.cfg.JWT_SECRET, h.cfg.REFRESH_TOKEN_EXP)
+	newRefreshToken, err := h.jwtService.NewRefreshToken(claims.UserId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to rotate refresh token"})
 		return
@@ -108,13 +108,13 @@ func (h *AuthHandler) OAuthProvider(c *gin.Context) {
 		user = u
 	}
 
-	accessToken, err := h.jwtService.NewToken(user.Id, h.cfg.JWT_ISS, h.cfg.JWT_SECRET, h.cfg.ACCESS_TOKEN_EXP)
+	accessToken, err := h.jwtService.NewAccessToken(user.Id)
 	if err != nil {
 		log.Println(err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-	refreshToken, err := h.jwtService.NewToken(user.Id, h.cfg.JWT_ISS, h.cfg.JWT_SECRET, h.cfg.REFRESH_TOKEN_EXP)
+	refreshToken, err := h.jwtService.NewRefreshToken(user.Id)
 	if err != nil {
 		log.Println(err)
 		c.Status(http.StatusInternalServerError)
