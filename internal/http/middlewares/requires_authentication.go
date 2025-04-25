@@ -7,7 +7,7 @@ import (
 	"github.com/joaovictorsl/go-backend-template/internal/http/jwt"
 )
 
-func MustAuthenticate(jwtService jwt.Service) gin.HandlerFunc {
+func RequiresAuthentication(jwtService jwt.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := c.Request.Cookie("token")
 		if err != nil {
