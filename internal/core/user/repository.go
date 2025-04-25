@@ -12,6 +12,7 @@ type Repository interface {
 	CreateUser(ctx context.Context, u entity.User) (id uint, err error)
 	GetUserById(ctx context.Context, id uint) (u entity.User, err error)
 	GetUserByProviderId(ctx context.Context, googleId string) (u entity.User, err error)
+	DeleteUserById(ctx context.Context, id uint) error
 }
 
 func NewRepository(db *pgxpool.Pool) Repository {
@@ -27,6 +28,8 @@ var (
 	GetUserByIdSQL string
 	//go:embed sql/get_user_by_provider_id.sql
 	GetUserByProviderIdSQL string
+	//go:embed sql/delete_user.sql
+	DeleteUserByIdSQL string
 )
 
 type RepositoryImpl struct {
@@ -49,4 +52,9 @@ func (r RepositoryImpl) GetUserByProviderId(ctx context.Context, googleId string
 	row := r.Database.QueryRow(ctx, GetUserByProviderIdSQL, googleId)
 	err = row.Scan(&u.Id, &u.ProviderId, &u.Email)
 	return u, err
+}
+
+func (r RepositoryImpl) DeleteUserById(ctx context.Context, id uint) error {
+	_, err := r.Database.Exec(ctx, DeleteUserByIdSQL, id)
+	return err
 }

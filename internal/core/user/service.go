@@ -10,6 +10,7 @@ type Service interface {
 	CreateUser(ctx context.Context, u entity.User) (id uint, err error)
 	GetUserById(ctx context.Context, userId uint) (u entity.User, err error)
 	GetUserByProviderId(ctx context.Context, providerId string) (u entity.User, err error)
+	DeleteUserById(ctx context.Context, userId uint) error
 }
 
 func NewService(userRepository Repository) Service {
@@ -32,4 +33,8 @@ func (s *ServiceImpl) GetUserById(ctx context.Context, userId uint) (u entity.Us
 
 func (s *ServiceImpl) GetUserByProviderId(ctx context.Context, providerId string) (u entity.User, err error) {
 	return s.GetUserByProviderId(ctx, providerId)
+}
+
+func (s *ServiceImpl) DeleteUserById(ctx context.Context, userId uint) error {
+	return s.userRepository.DeleteUserById(ctx, userId)
 }

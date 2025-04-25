@@ -144,6 +144,27 @@ func (suite *UserRepositoryTestSuite) TestGetUserByProviderIdSuccessfully() {
 	assert.Equal(t, suite.testUser, user)
 }
 
-func TestCustomerRepoTestSuite(t *testing.T) {
+func (suite *UserRepositoryTestSuite) TestDeleteExistentUserByIdSuccessfully() {
+	t := suite.T()
+	// Setup
+	userId, err := suite.repository.CreateUser(suite.ctx, suite.testUser)
+	suite.testUser.Id = userId
+	require.NoError(t, err)
+	require.Greater(t, userId, uint(0))
+	// Action
+	err = suite.repository.DeleteUserById(suite.ctx, suite.testUser.Id)
+	// Assert
+	assert.NoError(t, err)
+}
+
+func (suite *UserRepositoryTestSuite) TestDeleteNonExistentUserByIdSuccessfully() {
+	t := suite.T()
+	// Action
+	err := suite.repository.DeleteUserById(suite.ctx, 0)
+	// Assert
+	assert.NoError(t, err)
+}
+
+func TestUserRepositoryTestSuite(t *testing.T) {
 	suite.Run(t, new(UserRepositoryTestSuite))
 }
