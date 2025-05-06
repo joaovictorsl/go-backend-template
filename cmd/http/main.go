@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/joaovictorsl/aegis/token"
+	"github.com/joaovictorsl/go-backend-template/internal/auth"
 	"github.com/joaovictorsl/go-backend-template/internal/config"
-	"github.com/joaovictorsl/go-backend-template/internal/core/user"
 	"github.com/joaovictorsl/go-backend-template/internal/database"
-	"github.com/joaovictorsl/go-backend-template/internal/http/handlers"
-	"github.com/joaovictorsl/go-backend-template/internal/http/jwt"
+	"github.com/joaovictorsl/go-backend-template/internal/router"
+	"github.com/joaovictorsl/go-backend-template/internal/user"
 )
 
 func main() {
@@ -17,17 +19,16 @@ func main() {
 
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
+	deleteUserHandler := user.DeleteUserHTTPHandler(cfg, userService)
 
-	jwtRepository := jwt.NewRepository(db)
-	jwtService := jwt.NewService(cfg, jwtRepository)
-	authHandler := handlers.NewAuthHandler(cfg, userService, jwtService)
+	a := auth.New(cfg, userService, token.NewInMemoryRepository())
 
-	r := gin.Default()
+	router := router.New()
 
-	r.GET("/auth/oauth/:provider", authHandler.OAuthProvider)
-	r.GET("/auth/refresh", authHandler.Refresh)
+	router.GET("/auth/google", a.GoogleLoginHandler())
+	router.GET("/auth/google/callback", a.GoogleCallbackHandler())
 
-	if err := r.Run(fmt.Sprintf(":%d", cfg.PORT)); err != nil {
-		panic(err)
-	}
+	router.DELETE("/users/me", a.RequireAuth(deleteUserHandler))
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.PORT), router))
 }

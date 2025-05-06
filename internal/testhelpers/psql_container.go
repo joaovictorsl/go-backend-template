@@ -49,7 +49,7 @@ func CreatePostgresContainer(ctx context.Context) (*PostgresContainer, error) {
 }
 
 func getUpMigrationFiles() ([]string, error) {
-	migrationsPath, err := filepath.Abs(filepath.Join("..", "..", "..", "migrations"))
+	migrationsPath, err := filepath.Abs(filepath.Join("..", "..", "migrations"))
 	if err != nil {
 		return nil, err
 	}

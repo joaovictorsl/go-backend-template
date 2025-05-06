@@ -1,5 +1,5 @@
 CREATE TABLE refresh_tokens (
-    user_id INT PRIMARY KEY,
+    user_id UUID PRIMARY KEY,
     jwt TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL CHECK ( created_at <= expires_at ),
