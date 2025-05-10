@@ -1,6 +1,6 @@
 package errs
 
-type Error struct {
+type HTTPError struct {
 	Code    int
 	Message string
 	Err     error
@@ -8,7 +8,7 @@ type Error struct {
 
 func HandleIfError(err error, code int, message string) {
 	if err != nil {
-		panic(Error{
+		panic(HTTPError{
 			Code:    code,
 			Message: message,
 			Err:     err,

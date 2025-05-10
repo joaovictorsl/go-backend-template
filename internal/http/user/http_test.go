@@ -1,4 +1,4 @@
-package user_test
+package http_test
 
 import (
 	"errors"
@@ -7,33 +7,42 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/joaovictorsl/go-backend-template/internal/auth/authtest"
 	"github.com/joaovictorsl/go-backend-template/internal/config"
-	"github.com/joaovictorsl/go-backend-template/internal/router"
-	"github.com/joaovictorsl/go-backend-template/internal/user"
-	"github.com/joaovictorsl/go-backend-template/internal/user/usertest"
+	"github.com/joaovictorsl/go-backend-template/internal/core/user/usecase/usecasetest"
+	"github.com/joaovictorsl/go-backend-template/internal/http/auth/authtest"
+	"github.com/joaovictorsl/go-backend-template/internal/http/router"
+	userhttp "github.com/joaovictorsl/go-backend-template/internal/http/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
+func setupRouter(
+	cfg *config.Config,
+	requireAuth func(http.HandlerFunc) http.HandlerFunc,
+	userServiceMock *usecasetest.UseCaseMock,
+) *chi.Mux {
+	r := router.SetupRouter()
+	userhttp.SetupRoutes(r, cfg, requireAuth, userServiceMock)
+	return r
+}
+
 func TestDeleteHandler(t *testing.T) {
-	path := "/users"
+	path := "/users/me"
 	userId := uuid.NewString()
 
 	t.Run(
-		"should run successfully",
+		"should return no content status when successfully deletes user",
 		func(t *testing.T) {
 			// Setup
 			cfg := &config.Config{TIMEOUT: 5 * time.Second}
-			userServiceMock := new(usertest.ServiceMock)
+			userUseCaseMock := usecasetest.NewMock(t)
 			authMock := authtest.AuthMock{UserId: &userId}
-			userDeleteHandler := user.DeleteUserHTTPHandler(cfg, userServiceMock)
 
-			router := router.New()
-			router.DELETE(path, authMock.RequireAuth(userDeleteHandler))
+			router := setupRouter(cfg, authMock.RequireAuth, userUseCaseMock)
 
-			userServiceMock.On(
+			userUseCaseMock.On(
 				"DeleteUserById",
 				mock.Anything,
 				userId,
@@ -49,16 +58,14 @@ func TestDeleteHandler(t *testing.T) {
 	)
 
 	t.Run(
-		"should return unauthorized when auth fails",
+		"should return unauthorized status when auth fails",
 		func(t *testing.T) {
 			// Setup
 			cfg := &config.Config{TIMEOUT: 5 * time.Second}
-			userServiceMock := new(usertest.ServiceMock)
+			userUseCaseMock := usecasetest.NewMock(t)
 			authMock := authtest.AuthMock{UserId: nil}
-			userDeleteHandler := user.DeleteUserHTTPHandler(cfg, userServiceMock)
 
-			router := router.New()
-			router.DELETE(path, authMock.RequireAuth(userDeleteHandler))
+			router := setupRouter(cfg, authMock.RequireAuth, userUseCaseMock)
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodDelete, path, nil)
@@ -70,22 +77,20 @@ func TestDeleteHandler(t *testing.T) {
 	)
 
 	t.Run(
-		"should return internal server error when DeleteUserById fails",
+		"should return internal server error status when usecase fails",
 		func(t *testing.T) {
 			// Setup
 			cfg := &config.Config{TIMEOUT: 5 * time.Second}
-			userServiceMock := new(usertest.ServiceMock)
+			userUseCaseMock := usecasetest.NewMock(t)
 			authMock := authtest.AuthMock{UserId: &userId}
-			userDeleteHandler := user.DeleteUserHTTPHandler(cfg, userServiceMock)
 
-			userServiceMock.On(
+			userUseCaseMock.On(
 				"DeleteUserById",
 				mock.Anything,
 				userId,
-			).Return(errors.New("something went wrong"))
+			).Return(errors.New("failed"))
 
-			router := router.New()
-			router.DELETE(path, authMock.RequireAuth(userDeleteHandler))
+			router := setupRouter(cfg, authMock.RequireAuth, userUseCaseMock)
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodDelete, path, nil)

@@ -9,8 +9,8 @@ type AuthMock struct {
 	UserId *string
 }
 
-func (m *AuthMock) RequireAuth(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *AuthMock) RequireAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if m.UserId == nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -19,5 +19,5 @@ func (m *AuthMock) RequireAuth(handler http.Handler) http.Handler {
 		rCtx := context.WithValue(r.Context(), "user_id", *m.UserId)
 		r = r.WithContext(rCtx)
 		handler.ServeHTTP(w, r)
-	})
+	}
 }

@@ -6,29 +6,30 @@ import (
 	"net/http"
 
 	"github.com/joaovictorsl/aegis/token"
-	"github.com/joaovictorsl/go-backend-template/internal/auth"
 	"github.com/joaovictorsl/go-backend-template/internal/config"
+	userrepository "github.com/joaovictorsl/go-backend-template/internal/core/user/repository"
+	userusecase "github.com/joaovictorsl/go-backend-template/internal/core/user/usecase"
 	"github.com/joaovictorsl/go-backend-template/internal/database"
-	"github.com/joaovictorsl/go-backend-template/internal/router"
-	"github.com/joaovictorsl/go-backend-template/internal/user"
+	"github.com/joaovictorsl/go-backend-template/internal/http/auth"
+	"github.com/joaovictorsl/go-backend-template/internal/http/router"
+	userhttp "github.com/joaovictorsl/go-backend-template/internal/http/user"
 )
 
 func main() {
 	cfg := config.NewConfig()
 	db := database.NewDatabase(cfg)
 
-	userRepository := user.NewRepository(db)
-	userService := user.NewService(userRepository)
-	deleteUserHandler := user.DeleteUserHTTPHandler(cfg, userService)
+	userRepository := userrepository.New(db)
+	userUseCase := userusecase.New(userRepository)
 
-	a := auth.New(cfg, userService, token.NewInMemoryRepository())
+	a := auth.New(cfg, userUseCase, token.NewInMemoryRepository())
 
-	router := router.New()
+	r := router.SetupRouter()
 
-	router.GET("/auth/google", a.GoogleLoginHandler())
-	router.GET("/auth/google/callback", a.GoogleCallbackHandler())
+	r.Get("/auth/google", a.GoogleLoginHandler())
+	r.Get("/auth/google/callback", a.GoogleCallbackHandler())
 
-	router.DELETE("/users/me", a.RequireAuth(deleteUserHandler))
+	userhttp.SetupRoutes(r, cfg, a.RequireAuth, userUseCase)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.PORT), router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.PORT), r))
 }

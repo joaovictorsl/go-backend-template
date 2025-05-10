@@ -10,19 +10,19 @@ import (
 	"github.com/joaovictorsl/aegis/oauth"
 	"github.com/joaovictorsl/aegis/token"
 	"github.com/joaovictorsl/go-backend-template/internal/config"
-	"github.com/joaovictorsl/go-backend-template/internal/entity"
-	"github.com/joaovictorsl/go-backend-template/internal/user"
+	"github.com/joaovictorsl/go-backend-template/internal/core/entity"
+	"github.com/joaovictorsl/go-backend-template/internal/core/user/usecase"
 )
 
 type Auth interface {
-	GoogleLoginHandler() http.Handler
-	GoogleCallbackHandler() http.Handler
-	RequireAuth(http.Handler) http.Handler
+	GoogleLoginHandler() http.HandlerFunc
+	GoogleCallbackHandler() http.HandlerFunc
+	RequireAuth(http.HandlerFunc) http.HandlerFunc
 }
 
 func New(
 	cfg *config.Config,
-	userService user.Service,
+	userUseCase usecase.UseCase,
 	tokenRepository token.Repository,
 ) Auth {
 	jwtManager := token.NewJWTManager(cfg.JWT_ISS, cfg.JWT_SECRET, cfg.ACCESS_TOKEN_EXP, cfg.REFRESH_TOKEN_EXP)
@@ -30,13 +30,13 @@ func New(
 	a := aegis.New(
 		jwtManager,
 		func(ctx context.Context, pu oauth.ProviderUser) (string, error) {
-			u, err := userService.GetUserByProviderId(ctx, pu.Id)
+			u, err := userUseCase.GetUserByProviderId(ctx, pu.Id)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
 					return "", err
 				}
 
-				newUserId, err := userService.CreateUser(ctx, entity.User{
+				newUserId, err := userUseCase.CreateUser(ctx, entity.User{
 					ProviderId: pu.Provider + "|" + pu.Id,
 					Email:      pu.Email,
 				})
@@ -74,14 +74,14 @@ type AegisAuth struct {
 	requireAuth    func(http.Handler) http.Handler
 }
 
-func (a *AegisAuth) GoogleLoginHandler() http.Handler {
-	return a.googleHandlers.Login
+func (a *AegisAuth) GoogleLoginHandler() http.HandlerFunc {
+	return a.googleHandlers.Login.ServeHTTP
 }
 
-func (a *AegisAuth) GoogleCallbackHandler() http.Handler {
-	return a.googleHandlers.Callback
+func (a *AegisAuth) GoogleCallbackHandler() http.HandlerFunc {
+	return a.googleHandlers.Callback.ServeHTTP
 }
 
-func (a *AegisAuth) RequireAuth(handler http.Handler) http.Handler {
-	return a.requireAuth(handler)
+func (a *AegisAuth) RequireAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return a.requireAuth(handler).ServeHTTP
 }
