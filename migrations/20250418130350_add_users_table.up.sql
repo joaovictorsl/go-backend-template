@@ -1,5 +1,0 @@
-CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    provider_id VARCHAR(64) NOT NULL UNIQUE,
-    email VARCHAR(64) NOT NULL UNIQUE
-);

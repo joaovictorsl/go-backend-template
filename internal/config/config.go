@@ -1,92 +1,66 @@
 package config
 
 import (
-	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
 )
 
 type Config struct {
-	DATABASE_URL               string
-	PORT                       uint
-	GOOGLE_CLIENT_ID           string
-	GOOGLE_CLIENT_SECRET       string
-	GOOGLE_CLIENT_REDIRECT_URI string
-	JWT_SECRET                 string
-	JWT_ISS                    string
-	ACCESS_TOKEN_EXP           time.Duration
-	REFRESH_TOKEN_EXP          time.Duration
-	TIMEOUT                    time.Duration
+	DatabaseUrl string
+	Port        uint
+	JwtSecret   string
+	Timeout     time.Duration
 }
 
-func must(name string, value string) {
-	if value == "" {
-		panic(fmt.Sprintf("env variable %s not provided", name))
-	}
-}
-
-func NewConfig() *Config {
-	DATABASE_URL := os.Getenv("DATABASE_URL")
-	must("DATABASE_URL", DATABASE_URL)
-
-	PORT, err := strconv.ParseUint(os.Getenv("PORT"), 10, 0)
-	if err != nil {
-		log.Printf("failed to read env variable PORT, using default value instead: %s", err.Error())
-		PORT = 8080
-	}
-
-	GOOGLE_CLIENT_ID := os.Getenv("GOOGLE_CLIENT_ID")
-	must("GOOGLE_CLIENT_ID", GOOGLE_CLIENT_ID)
-	GOOGLE_CLIENT_SECRET := os.Getenv("GOOGLE_CLIENT_SECRET")
-	must("GOOGLE_CLIENT_SECRET", GOOGLE_CLIENT_SECRET)
-	GOOGLE_CLIENT_REDIRECT_URI := os.Getenv("GOOGLE_CLIENT_REDIRECT_URI")
-	must("GOOGLE_CLIENT_REDIRECT_URI", GOOGLE_CLIENT_REDIRECT_URI)
-
-	JWT_SECRET := os.Getenv("JWT_SECRET")
-	must("JWT_SECRET", JWT_SECRET)
-	JWT_ISS := os.Getenv("JWT_ISS")
-	must("JWT_ISS", JWT_ISS)
-
-	var ACCESS_TOKEN_EXP time.Duration
-	ACCESS_TOKEN_EXP_INT, err := strconv.ParseUint(os.Getenv("ACCESS_TOKEN_EXP"), 10, 0)
-	if err != nil {
-		log.Printf("failed to read env variable ACCESS_TOKEN_EXP, using default value instead: %s", err.Error())
-		ACCESS_TOKEN_EXP = 15 * time.Minute
-	} else {
-		ACCESS_TOKEN_EXP = time.Duration(ACCESS_TOKEN_EXP_INT) * time.Second
-	}
-
-	var REFRESH_TOKEN_EXP time.Duration
-	REFRESH_TOKEN_EXP_INT, err := strconv.ParseUint(os.Getenv("REFRESH_TOKEN_EXP"), 10, 0)
-	if err != nil {
-		log.Printf("failed to read env variable REFRESH_TOKEN_EXP, using default value instead: %s", err.Error())
-		oneWeek := 7 * 24 * time.Hour
-		REFRESH_TOKEN_EXP = oneWeek
-	} else {
-		REFRESH_TOKEN_EXP = time.Duration(REFRESH_TOKEN_EXP_INT) * time.Second
-	}
-
-	var TIMEOUT time.Duration
-	TIMEOUT_INT, err := strconv.ParseUint(os.Getenv("TIMEOUT"), 10, 0)
-	if err != nil {
-		log.Printf("failed to read env variable TIMEOUT, using default value instead: %s", err.Error())
-		TIMEOUT = 5 * time.Second
-	} else {
-		TIMEOUT = time.Duration(TIMEOUT_INT) * time.Second
-	}
+func New() *Config {
+	DATABASE_URL := mustGetenv("DATABASE_URL")
+	PORT := getenvOrDefaultParse("PORT", "8000", strconv.Atoi)
+	JWT_SECRET := mustGetenv("JWT_SECRET")
+	TIMEOUT := getenvOrDefaultParse("TIMEOUT", "5s", time.ParseDuration)
 
 	return &Config{
-		DATABASE_URL:               DATABASE_URL,
-		PORT:                       uint(PORT),
-		GOOGLE_CLIENT_ID:           GOOGLE_CLIENT_ID,
-		GOOGLE_CLIENT_SECRET:       GOOGLE_CLIENT_SECRET,
-		GOOGLE_CLIENT_REDIRECT_URI: GOOGLE_CLIENT_REDIRECT_URI,
-		JWT_SECRET:                 JWT_SECRET,
-		JWT_ISS:                    JWT_ISS,
-		ACCESS_TOKEN_EXP:           ACCESS_TOKEN_EXP,
-		REFRESH_TOKEN_EXP:          REFRESH_TOKEN_EXP,
-		TIMEOUT:                    TIMEOUT,
+		DATABASE_URL,
+		uint(PORT),
+		JWT_SECRET,
+		TIMEOUT,
 	}
+}
+
+func mustGetenv(k string) string {
+	env, ok := os.LookupEnv(k)
+	if !ok {
+		slog.Warn("required env variable not provided",
+			slog.String("variable", k),
+		)
+		panic(0)
+	}
+	return env
+}
+
+func getenvOrDefault(k string, v string) string {
+	env, ok := os.LookupEnv(k)
+	if !ok {
+		slog.Warn("env variable not provided, using default value instead",
+			slog.String("variable", k),
+			slog.String("default", v),
+		)
+		return v
+	}
+	return env
+}
+
+func getenvOrDefaultParse[T any](k string, v string, parse func(string) (T, error)) T {
+	envStr := getenvOrDefault(k, v)
+	env, err := parse(envStr)
+	if err != nil {
+		slog.Error("failed to parse env variable",
+			slog.String("variable", k),
+			slog.String("value", envStr),
+			slog.String("error", err.Error()),
+		)
+		panic(0)
+	}
+	return env
 }
