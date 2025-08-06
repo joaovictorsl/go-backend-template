@@ -3,7 +3,6 @@ Dockerfile.dev
 .dockerignore
 .gitignore
 tmp
-.env
-.env.local
+.env*
 docker-compose.yml
 Makefile
