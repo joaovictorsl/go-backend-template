@@ -1,13 +1,26 @@
 include .env
 
-.PHONY: migration-down migration-up run
+.EXPORT_ALL_VARIABLES:
+
+.PHONY: migrate-down migrate-up run stop full-stop test
 
 migrate-down:
-	migrate -path=migrations -database=${DATABASE_URL} down
+	goose -dir=migrations postgres ${DATABASE_URL} down
 
 migrate-up:
-	migrate -path=migrations -database=${DATABASE_URL} up
+	goose -dir=migrations postgres ${DATABASE_URL} up
 
 run:
 	docker compose up --build -d --remove-orphans
 	air
+
+stop:
+	docker compose down
+
+full-stop:
+	docker compose down -v
+
+args?=./...
+test:
+	go test ${args}
+

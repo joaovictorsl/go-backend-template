@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
@@ -8,33 +9,42 @@ import (
 )
 
 type Config struct {
-	DatabaseUrl string
-	Port        uint
-	JwtSecret   string
-	Timeout     time.Duration
+	DatabaseUrl     string
+	Port            uint
+	JwtSecret       string
+	RequestTimeout  time.Duration
+	ShutdownTimeout time.Duration
+	LogLevel        slog.Level
 }
 
 func New() *Config {
 	DATABASE_URL := mustGetenv("DATABASE_URL")
 	PORT := getenvOrDefaultParse("PORT", "8000", strconv.Atoi)
 	JWT_SECRET := mustGetenv("JWT_SECRET")
-	TIMEOUT := getenvOrDefaultParse("TIMEOUT", "5s", time.ParseDuration)
+	REQUEST_TIMEOUT := getenvOrDefaultParse("REQUEST_TIMEOUT", "10s", time.ParseDuration)
+	SHUTDOWN_TIMEOUT := getenvOrDefaultParse("SHUTDOWN_TIMEOUT", "1m", time.ParseDuration)
+	LOG_LEVEL := getenvOrDefaultParse("LOG_LEVEL", "debug", parseLogLevel)
 
 	return &Config{
 		DATABASE_URL,
 		uint(PORT),
 		JWT_SECRET,
-		TIMEOUT,
+		REQUEST_TIMEOUT,
+		SHUTDOWN_TIMEOUT,
+		LOG_LEVEL,
 	}
+}
+
+func parseLogLevel(s string) (slog.Level, error) {
+	var level slog.Level
+	var err = level.UnmarshalText([]byte(s))
+	return level, err
 }
 
 func mustGetenv(k string) string {
 	env, ok := os.LookupEnv(k)
 	if !ok {
-		slog.Warn("required env variable not provided",
-			slog.String("variable", k),
-		)
-		panic(0)
+		panic(fmt.Sprintf("required env variable not provided: %s", k))
 	}
 	return env
 }
@@ -42,10 +52,7 @@ func mustGetenv(k string) string {
 func getenvOrDefault(k string, v string) string {
 	env, ok := os.LookupEnv(k)
 	if !ok {
-		slog.Warn("env variable not provided, using default value instead",
-			slog.String("variable", k),
-			slog.String("default", v),
-		)
+		fmt.Printf("%s not provided, using: %s\n", k, v)
 		return v
 	}
 	return env
@@ -55,12 +62,7 @@ func getenvOrDefaultParse[T any](k string, v string, parse func(string) (T, erro
 	envStr := getenvOrDefault(k, v)
 	env, err := parse(envStr)
 	if err != nil {
-		slog.Error("failed to parse env variable",
-			slog.String("variable", k),
-			slog.String("value", envStr),
-			slog.String("error", err.Error()),
-		)
-		panic(0)
+		panic(fmt.Sprintf("failed to parse value for %s: %s\n%s\n", k, v, err))
 	}
 	return env
 }

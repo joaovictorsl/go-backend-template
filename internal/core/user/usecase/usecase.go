@@ -5,23 +5,16 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/joaovictorsl/go-backend-template/internal/core/entity"
-	userrepository "github.com/joaovictorsl/go-backend-template/internal/core/user/repository"
 )
 
-type UseCase interface {
-	GetUserById(ctx context.Context, id uuid.UUID) (entity.User, error)
+type Service interface {
+	Get(ctx context.Context, id uuid.UUID) (entity.User, error)
 }
 
-func New(userRepository userrepository.Repository) UseCase {
-	return useCaseImpl{
-		userRepository,
-	}
+type UseCase struct {
+	UserService Service
 }
 
-type useCaseImpl struct {
-	userRepository userrepository.Repository
-}
-
-func (u useCaseImpl) GetUserById(ctx context.Context, id uuid.UUID) (entity.User, error) {
-	return u.userRepository.GetUserById(ctx, id)
+func (u *UseCase) Get(ctx context.Context, id uuid.UUID) (entity.User, error) {
+	return u.UserService.Get(ctx, id)
 }
