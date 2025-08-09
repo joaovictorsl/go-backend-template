@@ -1,30 +1,17 @@
 services:
-  auth:
-    container_name: auth
-    image: supabase/auth:v2.177.0
-    ports:
-      - 9999:9999
-      - 9100:9100
-    env_file:
-      - .env.auth
-    depends_on:
-      database:
-        condition: service_healthy
   database:
     container_name: database
     image: postgres:17
     ports:
-      - 5432:5432
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
     volumes:
       - database:/var/lib/postgresql/data
-      - ./init_postgres.sh:/docker-entrypoint-initdb.d/init.sh
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: postgres
-      DB_NAMESPACE: auth
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 3s
       retries: 5

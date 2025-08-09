@@ -1,4 +1,4 @@
-package errs
+package web
 
 import (
 	"fmt"
@@ -13,19 +13,19 @@ type HttpError struct {
 	error   error
 }
 
-func FromError(err error) HttpError {
+func HttpErrorFrom(err error) HttpError {
 	var (
 		status  int
 		message string
 	)
 
-	castedErr, ok := err.(*core.AppError)
-	if !ok {
+	switch err {
+	case core.ErrNotFound:
+		status = http.StatusNotFound
+		message = "We couldn't find what you were looking for"
+	default:
 		status = http.StatusInternalServerError
 		message = "Something went wrong on our side"
-	} else if castedErr == core.ErrNotFound {
-		status = http.StatusNotFound
-		message = "We didn't find what you were looking for"
 	}
 
 	return HttpError{
@@ -48,5 +48,6 @@ func (err HttpError) Status() int {
 }
 
 func (err HttpError) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`{"message": "%s"}`, err.message)), nil
+	jsonErr := fmt.Sprintf(`{"message": "%s"}`, err.message)
+	return []byte(jsonErr), nil
 }

@@ -1,0 +1,31 @@
+[env]
+_.file = ".env"
+
+[tasks.migrate-down]
+description = "Migrate down to version 0"
+run = "goose -dir=migrations postgres {{env.DATABASE_URL}} down"
+
+[tasks.migrate-up]
+description = "Migrate up to latest version"
+run = "goose -dir=migrations postgres {{env.DATABASE_URL}} up"
+
+[tasks.start]
+description = "Run compose"
+run = "docker compose up --build --wait --remove-orphans"
+
+[tasks.stop]
+description = "Stop compose"
+run = "docker compose down"
+
+[tasks.full-stop]
+description = "Stop compose and clean volumes"
+run = "docker compose down -v"
+
+[tasks.run]
+description = "Run compose and air"
+depends = ["start"]
+run = "air"
+
+[tasks.test]
+description = "Run automated tests"
+run = "go test {{arg(name='pkg', default='./...')}}"

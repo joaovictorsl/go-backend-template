@@ -3,64 +3,56 @@ package config
 import (
 	"log/slog"
 	"os"
-	"strconv"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	DatabaseUrl string
-	Port        uint
-	JwtSecret   string
-	Timeout     time.Duration
+	DatabaseUrl        string
+	Port               uint
+	RequestTimeout     time.Duration
+	ShutdownTimeout    time.Duration
+	LogLevel           slog.Level
+	GoogleClientId     string
+	GoogleClientSecret string
+}
+
+func init() {
+	viper.SetConfigFile("config.yml")
+	viper.AddConfigPath(".")
 }
 
 func New() *Config {
-	DATABASE_URL := mustGetenv("DATABASE_URL")
-	PORT := getenvOrDefaultParse("PORT", "8000", strconv.Atoi)
-	JWT_SECRET := mustGetenv("JWT_SECRET")
-	TIMEOUT := getenvOrDefaultParse("TIMEOUT", "5s", time.ParseDuration)
+	setConfigDefaults()
+	err := viper.ReadInConfig()
+	if err != nil && !os.IsNotExist(err) {
+		panic(err)
+	}
 
 	return &Config{
-		DATABASE_URL,
-		uint(PORT),
-		JWT_SECRET,
-		TIMEOUT,
+		viper.GetString("database_url"),
+		viper.GetUint("api.port"),
+		viper.GetDuration("request.timeout"),
+		viper.GetDuration("shutdown.timeout"),
+		parseLogLevel(viper.GetString("log.level")),
+		viper.GetString("google_client_id"),
+		viper.GetString("google_client_secret"),
 	}
 }
 
-func mustGetenv(k string) string {
-	env, ok := os.LookupEnv(k)
-	if !ok {
-		slog.Warn("required env variable not provided",
-			slog.String("variable", k),
-		)
-		panic(0)
-	}
-	return env
+func setConfigDefaults() {
+	viper.SetDefault("api.port", 8000)
+	viper.SetDefault("request.timeout", "10s")
+	viper.SetDefault("shutdown.timeout", "1m")
+	viper.SetDefault("log.level", "debug")
+	viper.AutomaticEnv()
 }
 
-func getenvOrDefault(k string, v string) string {
-	env, ok := os.LookupEnv(k)
-	if !ok {
-		slog.Warn("env variable not provided, using default value instead",
-			slog.String("variable", k),
-			slog.String("default", v),
-		)
-		return v
+func parseLogLevel(s string) slog.Level {
+	var level slog.Level
+	if err := level.UnmarshalText([]byte(s)); err != nil {
+		panic(err)
 	}
-	return env
-}
-
-func getenvOrDefaultParse[T any](k string, v string, parse func(string) (T, error)) T {
-	envStr := getenvOrDefault(k, v)
-	env, err := parse(envStr)
-	if err != nil {
-		slog.Error("failed to parse env variable",
-			slog.String("variable", k),
-			slog.String("value", envStr),
-			slog.String("error", err.Error()),
-		)
-		panic(0)
-	}
-	return env
+	return level
 }

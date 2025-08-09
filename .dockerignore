@@ -1,8 +1,9 @@
 .git
-Dockerfile.dev
+Dockerfile
 .dockerignore
 .gitignore
 tmp
+.air.toml
 .env*
 docker-compose.yml
-Makefile
+mise.toml

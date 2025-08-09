@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/joaovictorsl/go-backend-template/internal/http/request"
+	"github.com/joaovictorsl/go-backend-template/internal/web/request"
 )
 
 func RequiresAuthentication(jwtSecret string) func(http.Handler) http.Handler {
