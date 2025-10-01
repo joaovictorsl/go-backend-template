@@ -1,8 +1,13 @@
 package core
 
-import "errors"
-
 var (
-	ErrNotFound       = errors.New("not found")
-	ErrTooManyResults = errors.New("too many results")
+	ErrNotFound = Error{"not found"}
 )
+
+type Error struct {
+	msg string
+}
+
+func (err Error) Error() string {
+	return err.msg
+}

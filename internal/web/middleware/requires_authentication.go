@@ -3,29 +3,31 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/joaovictorsl/go-backend-template/internal/web/jwt"
 	"github.com/joaovictorsl/go-backend-template/internal/web/request"
 )
 
-func RequiresAuthentication(jwtSecret string) func(http.Handler) http.Handler {
+type JwtValidator interface {
+	Validate(tokenString string) (*jwt.Claims, error)
+}
+
+func RequiresAuthentication(jwtSecret string, jwtValidator JwtValidator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c, err := r.Cookie("access_token")
+			c, err := r.Cookie("atok")
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 
-			tok, err := jwt.Parse(c.Value, func(t *jwt.Token) (any, error) {
-				return []byte(jwtSecret), nil
-			})
+			claims, err := jwtValidator.Validate(c.Value)
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 
-			sub, err := tok.Claims.GetSubject()
+			sub, err := claims.GetSubject()
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				return

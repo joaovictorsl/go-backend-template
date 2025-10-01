@@ -19,7 +19,7 @@ func Recover(next http.Handler) http.Handler {
 			castedErr, ok := rawErr.(error)
 			if !ok {
 				slog.Error(
-					"got non error value from recover",
+					"casting recover value to error",
 					slog.Any("value", rawErr),
 				)
 				return

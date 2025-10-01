@@ -12,9 +12,15 @@ type UserStore interface {
 }
 
 type Service struct {
-	UserStore UserStore
+	userStore UserStore
+}
+
+func New(userStore UserStore) *Service {
+	return &Service{
+		userStore: userStore,
+	}
 }
 
 func (s Service) Get(ctx context.Context, id uuid.UUID) (entity.User, error) {
-	return s.UserStore.Get(ctx, id)
+	return s.userStore.Get(ctx, id)
 }

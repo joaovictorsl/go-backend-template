@@ -3,7 +3,7 @@ _.file = ".env"
 
 [tasks.migrate-down]
 description = "Migrate down to version 0"
-run = "goose -dir=migrations postgres {{env.DATABASE_URL}} down"
+run = "goose -dir=migrations postgres {{env.DATABASE_URL}} down-to 0"
 
 [tasks.migrate-up]
 description = "Migrate up to latest version"

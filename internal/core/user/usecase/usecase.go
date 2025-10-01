@@ -12,9 +12,15 @@ type Service interface {
 }
 
 type UseCase struct {
-	UserService Service
+	userService Service
+}
+
+func New(userService Service) *UseCase {
+	return &UseCase{
+		userService: userService,
+	}
 }
 
 func (u *UseCase) Get(ctx context.Context, id uuid.UUID) (entity.User, error) {
-	return u.UserService.Get(ctx, id)
+	return u.userService.Get(ctx, id)
 }

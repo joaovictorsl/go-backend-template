@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joaovictorsl/go-backend-template/internal/config"
@@ -11,17 +11,11 @@ import (
 func New(cfg *config.Config) (*pgxpool.Pool, error) {
 	dbpool, err := pgxpool.New(context.Background(), cfg.DatabaseUrl)
 	if err != nil {
-		slog.Error("unable to create connection pool",
-			slog.Any("error", err),
-		)
-		return nil, err
+		return nil, fmt.Errorf("new pgxpool: %w", err)
 	}
 
 	if err := dbpool.Ping(context.Background()); err != nil {
-		slog.Error("unable to ping database",
-			slog.Any("error", err),
-		)
-		return nil, err
+		return nil, fmt.Errorf("db ping: %w", err)
 	}
 
 	return dbpool, nil
