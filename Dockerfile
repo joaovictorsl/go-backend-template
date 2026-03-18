@@ -10,12 +10,12 @@ COPY . .
 # Build the Go application
 # CGO_ENABLED=0 disables CGO, creating a statically linked binary
 # GOOS=linux specifies the target OS
-# -o myapp specifies the output executable name
+# -o main specifies the output executable name
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main cmd/web/main.go
 
 FROM alpine:latest
 
-WORKDIR /root/
+WORKDIR /app/
 
 COPY --from=build /app/main .
 
