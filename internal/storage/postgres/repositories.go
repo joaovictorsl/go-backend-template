@@ -8,7 +8,7 @@ import (
 
 type UserRepository = user.Repository
 
-func NewUserRepository(db *pgxpool.Pool) *user.Repository {
+func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 	return &user.Repository{
 		DB: db,
 	}
@@ -16,7 +16,7 @@ func NewUserRepository(db *pgxpool.Pool) *user.Repository {
 
 type RefreshTokenRepository = refreshtoken.Repository
 
-func NewRefreshTokenRepository(db *pgxpool.Pool) *refreshtoken.Repository {
+func NewRefreshTokenRepository(db *pgxpool.Pool) *RefreshTokenRepository {
 	return &refreshtoken.Repository{
 		DB: db,
 	}
