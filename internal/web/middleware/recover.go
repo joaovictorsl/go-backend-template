@@ -26,6 +26,12 @@ func Recover(next http.Handler) http.Handler {
 			}
 
 			err := web.HttpErrorFrom(castedErr)
+			if err.Status() == http.StatusInternalServerError {
+				slog.Error(
+					"unexpected error",
+					slog.Any("value", rawErr),
+				)
+			}
 
 			raw, _ := json.Marshal(err)
 			w.WriteHeader(err.Status())
