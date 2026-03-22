@@ -67,10 +67,14 @@ func (app *Server) Run(addr string) {
 
 func (app *Server) SetupRoutes() {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	if !app.Config.IsProd() {
+		r.Use(middleware.Logger)
+	}
 	r.Use(chimiddleware.Timeout(app.Config.RequestTimeout))
 	r.Use(middleware.Recover)
-	r.Use(middleware.PreventCSRF)
+	if app.Config.IsProd() {
+		r.Use(middleware.PreventCSRF)
+	}
 
 	app.mux = r
 	app.authMiddleware = middleware.RequiresAuthentication(app.Config.JwtSecret, app.JwtManager)
