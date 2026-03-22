@@ -8,12 +8,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	envProd = "prod"
+)
+
 type Config struct {
 	DatabaseUrl             string
 	GoogleClientId          string
 	GoogleClientSecret      string
 	GoogleClientRedirectUrl string
 	JwtSecret               string
+	Env                     string
 	Port                    uint
 	RequestTimeout          time.Duration
 	ShutdownTimeout         time.Duration
@@ -41,6 +46,7 @@ func New() *Config {
 		viper.GetString("google_client_redirect_url"),
 		viper.GetString("jwt_secret"),
 
+		viper.GetString("env"),
 		viper.GetUint("port"),
 		viper.GetDuration("timeouts.request"),
 		viper.GetDuration("timeouts.shutdown"),
@@ -57,9 +63,10 @@ func setConfigDefaults() {
 	viper.MustBindEnv("google_client_redirect_url")
 	viper.MustBindEnv("jwt_secret")
 
-	viper.SetDefault("api.port", 8000)
-	viper.SetDefault("request.timeout", "10s")
-	viper.SetDefault("shutdown.timeout", "1m")
+	viper.SetDefault("env", envProd)
+	viper.SetDefault("port", 8000)
+	viper.SetDefault("timeouts.request", "10s")
+	viper.SetDefault("timeouts.shutdown", "1m")
 	viper.SetDefault("log.level", "debug")
 	viper.SetDefault("token.access_ttl", "10m")
 	viper.SetDefault("token.refresh_ttl", "168h")
@@ -71,4 +78,8 @@ func parseLogLevel(s string) slog.Level {
 		panic(err)
 	}
 	return level
+}
+
+func (cfg *Config) IsProd() bool {
+	return cfg.Env == envProd
 }
