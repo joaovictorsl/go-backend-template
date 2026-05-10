@@ -6,7 +6,8 @@ require (
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.7.5
+	github.com/jackc/pgx/v5 v5.9.2
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
@@ -21,7 +22,6 @@ require (
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
-	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
@@ -35,8 +35,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/justinas/nosurf v1.2.0
 	github.com/spf13/viper v1.20.1
-	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sync v0.13.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 )
